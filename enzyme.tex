@@ -1,0 +1,108 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2020
+
+% ready for submission
+% \usepackage{neurips_2020}
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2020}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2020}
+
+% to avoid loading the natbib package, add option nonatbib:
+\usepackage{neurips_2020}
+\usepackage[cache=false]{minted}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{amsmath}
+\usepackage{wrapfig}
+
+%\usepackage{newunicodechar}
+%\usepackage{fontspec}
+%\newfontface\mathsymbolfont{Latin Modern Math}
+%\newunicodechar{ϕ}{{\mathsymbolfont\mitphi}}
+
+\newenvironment{tab}[2][\linewidth]
+{\begin{tabular*}{#1}[t]{@{\extracolsep{\fill}}>{\hspace{4pt}}#2}}%
+{\end{tabular*}}
+
+\usepackage{trimspaces}
+\newcommand*{\trim}[1]{%
+  \trim@spaces@noexp{#1}%
+}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing,shapes,arrows,positioning,calc}
+
+\tikzset{
+  cfedge/.style={
+    font=\itshape,
+    draw=black,
+    ->,
+    >=stealth'
+  },
+  process/.style={
+    draw,
+    fill=orange!50,
+    rectangle,
+    minimum height=1.5em,
+    minimum width=4em,
+    align=center,
+    font=\small,
+  }
+}
+
+\newcommand{\todo}[1]{{\color{red} TODO: #1}}
+\newcommand{\wmnote}[1]{{\color{blue} Billy: #1}}
+\newcommand{\vcnote}[1]{{\color{yellow} Valentin: #1}}
+\newcommand{\define}[1]{\textbf{\emph{#1}}}
+
+\title{Instead of Rewriting Foreign Code for Machine Learning, Automatically Synthesize Fast Gradients}
+
+\author{%
+  David S.~Hippocampus\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)---\emph{not} for acknowledging
+    funding agencies.} \\
+  Department of Computer Science\\
+  Cranberry-Lemon University\\
+  Pittsburgh, PA 15213 \\
+  \texttt{hippo@cs.cranberry-lemon.edu} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+\begin{document}
+
+\maketitle
+
+
+\begin{abstract}
+Applying differential programming techniques and machine learning algorithms to foreign programs requires developers to either rewrite their code in a machine learning framework, or otherwise provide derivatives of the foreign code.
+This paper presents Enzyme, a high-performance automatic differentiation (AD) compiler plugin for the LLVM compiler framework capable of synthesizing gradients of statically analyzable programs expressed in the LLVM intermediate representation (IR). Specifically, Enzyme can synthesize gradients for programs written in any language whose compiler targets LLVM IR including C, C++, Fortran, Julia, Rust, Swift, MLIR, etc., thereby providing native AD capabilities in these languages. Unlike traditional source-to-source and operator-overloading tools, Enzyme performs AD on optimized IR. On a machine-learning focused benchmark suite including Microsoft's ADBench, AD on optimized IR achieves a geometric mean speedup of 1.6x\todo{put real number} over AD on IR before optimization. Packaging Enzyme for PyTorch and Tensorflow provides convenient access to gradients of foreign code with state-of-the art performance, enabling foreign code to be directly incorporated into existing machine learning workflows. 
+\end{abstract}
+
+\input{introduction}
+\input{design}
+\input{integration}
+\input{eval}
+\input{conclusion}
+\input{ack}
+
+\bibliographystyle{plain}
+\bibliography{allpapers}
+
+\end{document}

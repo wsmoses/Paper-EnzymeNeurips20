@@ -1,0 +1,41 @@
+
+\begin{figure}[t]
+%\small
+\centering
+  \begin{tikzpicture}[auto, node distance=.15cm and 0.6cm]
+
+    \node [process, label=left:{Enzyme}] (clang1) {Clang};
+
+    \node [process, right= of clang1] (opt1) {\texttt{-O2}};
+
+    \node [process, right= of opt1] (enzyme1) {Enzyme};
+
+    \node [process, right= of enzyme1] (popt1) {\texttt{-O2}};
+
+    
+    \node [process, label=left:{Ref}, below= of clang1] (clang2) {Clang};
+
+    \node [process, below= of enzyme1] (enzyme2) {Enzyme};
+
+    \node [process, right= of enzyme2] (opt2) {\texttt{-O2}};
+
+    \node [process, right= of opt2] (popt2) {\texttt{-O2}};
+
+    \node [process, right= of popt2] (cg2) {CodeGen};
+
+    \node [process, above= of cg2] (cg1) {CodeGen};
+
+    \draw [->, line width=0.5mm] (clang1) -- node {} (opt1);
+    \draw [->, line width=0.5mm] (opt1) -- node {} (enzyme1);
+    \draw [->, line width=0.5mm] (enzyme1) -- node {} (popt1);
+    \draw [->, line width=0.5mm] (popt1) -- node {} (cg1);
+
+    \draw [->, line width=0.5mm] (clang2) -- node {} (enzyme2);
+    \draw [->, line width=0.5mm] (enzyme2) -- node {} (opt2);
+    \draw [->, line width=0.5mm] (opt2) -- node {} (popt2);
+    \draw [->, line width=0.5mm] (popt2) -- node {} (cg2);
+  \end{tikzpicture}
+
+\caption{The evaluation pipelines.}
+  \label{fig:pipeline}
+\end{figure}

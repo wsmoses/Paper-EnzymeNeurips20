@@ -1,0 +1,157 @@
+\section{Integration}
+\label{sec:integration}
+
+Enzyme is implemented as an LLVM compiler plug-in allowing it to easily integrate with the compiler pipelines used by Clang (C / C++), Julia, and Flang (Fortran).  This greatly simplifies deployment since users are not required to build and deploy custom configuration of LLVM. Integration with other LLVM-based languages is feasible and allows enzyme to provide native autodifferentiation capabilities to Rust, Nim, MLIR and others. In the following we will focus on the native AD currently implemented and the design and implementation challenges there off.
+
+\begin{figure}
+    \centering
+\begin{tabular}{c|c}
+\begin{minipage}[T]{0.49\linewidth}
+\begin{minted}[fontsize=\small]{c}
+__attribute__((
+  enzyme("augment", augment_f),
+  enzyme("gradient", gradient_f)
+))
+double f(double in);
+
+double func(double* x, double* y) {
+    return f(*x) + f(*y);
+}
+\end{minted}
+\end{minipage}
+&
+\begin{minipage}[T]{0.49\linewidth}
+\begin{minted}[fontsize=\small]{c}
+double dfunc(double* x, double *d_x,
+             double* y) {
+    __enzyme_autodiff(func,
+       // The variable x is active
+       // with gradient written to d_x
+       diffe_dup, x, d_x,
+       // The variable y is constant
+       diffe_const, y);
+}
+\end{minted}
+\end{minipage}
+\end{tabular}
+\caption{\textbf{\textit{Left:}} Specifying a custom forward and reverse pass for \texttt{f}. \textbf{\textit{Right:}} Creating a gradient for func with $x$ as an active variable and $y$ as a constant.}
+    \label{fig:native}
+\end{figure}
+
+\subsection{Native AD}
+\label{sec:native}
+Using gradients inside LLVM-based languages simply requires calling an external \texttt{\_\_enzyme\_autodiff} function as shown on the right in Figure \ref{fig:native}. Users can specify specific variables to be considered active or inactive by including either a enzyme-specific variable or metadata as part of the function call. 
+
+Enzyme requires the IR for all functions it may need to differentiate to be available when the pass is run. For single-source codes this is simple as all the IR is available. For codebases with multiple source files, or those that use external libraries this becomes slightly more tricky. We piggyback off of recent advances in Link-Time Optimization (LTO) \cite{Johnson2017-lm, TODO}, a compiler optimization for whole-program optimization that preserves IR from all source files until link time where a final set of interprocedural optimizations may run. To use Enzyme on multi-source codebases, enable LTO in Clang and run Enzyme on the merged IR for all the sources.
+
+Static libraries can be handled by compiling them with the \texttt{-fembed-bitcode} command that ensures that bitcode is included in the library as well. This allows one to perform AD on a program linking against a static library, by extracting the bitcode in the static library, and then running Enzyme on the original program with the IR of the static library.
+
+Moreover, users can integrate custom forward and backward passes into Enzyme by specifying them as metadata on the function to be differentiated, even if the definition of that function is not available during AD. In a separate Clang C/C++ frontend extension, we allow users to specify this directly with function attributes as on the left in Figure \ref{fig:native}.
+
+Internally, one also can specify the type propagation, activity analysis, and adjoint rules for custom foreign functions. To minimize the amount of work for users, we provide these rules for common functions in the C/C++ standard and math libraries.
+
+
+\begin{figure}
+    \centering
+
+\vspace*{-1cm}\begin{equation*}
+f(x) = \sum_{i=1}^{N} \frac{x^i}{i} \approx -\log(1-x)
+\end{equation*}
+\begin{tabular}{ccc}
+\begin{minipage}[T]{0.20\linewidth}
+\begin{minted}[fontsize=\small]{julia}
+function f(x)
+  sum = zero(x)
+  for i = 1:10^7
+    sum += x^i / i
+  end
+  return sum
+end
+\end{minted}
+\end{minipage}
+&
+\begin{tabular}{l|r}
+Tool & Runtime (s)\\
+\hline
+Enzyme.jl     &  0.810\\
+Zygote.jl     & 24.638\\
+AutoGrad.jl   &609.256\\
+\end{tabular}
+&
+\begin{minipage}[T]{0.29\linewidth}
+\begin{minted}[fontsize=\small]{julia}
+using Zygote, Enzyme
+
+Zygote.@adjoint f(x),
+  Enzyme.pullback(f, x)
+
+Zygote.gradient(f, 0.5)
+\end{minted}
+\end{minipage}
+\end{tabular}
+    \caption{\textbf{\textit{Left:}} A simple scalar function computing a Taylor expansion. \textbf{\textit{Center:}} The runtime of the gradient as computed by Enzyme.jl and two common Julia AD frameworks. \textbf{\textit{Right:}} How Enzyme can be integrated into existing AD frameworks to use Enzyme's more efficient implementation of scalars.}
+    \label{fig:zygote}
+\end{figure}
+
+
+Dynamic languages such as Julia require more work to integrate. First, Enzyme needed to be loaded into the Julia compiler with the Enzyme pass being called explicitly rather than obliviously calling a foreign function as in \todo{names}. Moreover, the IR for all code needed by Enzyme isn't available as the caching mechanism in Julia's execution engine only emits a function declaration. We use the infrastructure developed for Julia's GPU code generator to collect all the function definitions reachable by the function to be differentiated \cite{Besard2019-it, Besard2019-zu}. From here, we also replace some Julia functions with known LLVM intrinsics. We do so for two reasons. Julia implements its own version of common math functions like \texttt{sin} with custom implementations with bit fiddling not amenable to type analysis. Moreover, Julia resolves library calls like libm math functions as calls to opaque pointers, whose definitions are not known. Rather than replacing the Julia math functions with LLVM intrinsics, we could have specified a custom forward/backwards pass, but it was more efficient to do the replacement with LLVM intrinsics.
+
+Zygote \cite{zygoteArxiv, zygoteDP, zygoteMlsys} is a popular automatic-differentiation framework for Julia heavily used in probabilistic programming and scientific machine learning\todo{citations for this}. Zygote performs source-to-source AD on high-level Julia code with optimizations for matrix programs. As shown in Figure \ref{fig:zygote}, however, it can perform poorly on scalar programs. By embedding Enzyme inside Zygote as shown in the right of Figure \ref{fig:zygote}, Julia is able to perform AD with both high-level knowledge and low-level optimizations. Integrating Enzyme into Julia also provides the ability to take derivatives of foreign code, by utilizing embedded bitcode in shared libraries.
+
+\subsection{ML Frameworks}
+Having demonstrated the ability to synthesize gradients of functions in a variety of languages compiled by LLVM, it is desirable to leverage this to integrate foreign code into a machine learning framework.
+
+This can now be done by following the tutorials for creating a custom operator in PyTorch\cite{pytorchcustom} or Tensorflow \cite{tfcustom} where specifying the corresponding gradient is just calling \texttt{\_\_enzyme\_autodiff} as shown in Figure \ref{fig:tfcode} and compiling the custom operator with Enzyme as described in Section \ref{sec:native}.
+
+To simplify this workflow for machine learning programmers, we created a simple package for PyTorch and Tensorflow in Figure \ref{fig:mlframeworks} that exposes this functionality in Python without needing to compile a custom operator.
+
+
+\begin{figure}
+    \centering
+    \begin{minted}[fontsize=\small]{c}
+void f(float* inp, size_t n, float* out); // Input tensor + size, and output tensor
+
+void diffef(float* inp, float* d_inp, size_t n, float* d_out) {
+// diffe_dupnoneed specifies not recomputing the output
+  __enzyme_autodiff(f, diffe_dup, inp, d_inp, n, diffe_dupnoneed, (float*)0, d_out);
+}
+\end{minted}
+\begin{tabular}{c|c}
+\begin{minipage}[T]{0.46\linewidth}
+\begin{minted}[fontsize=\small]{python}
+import torch
+from torch_enzyme import enzyme
+# Create some initial tensor
+inp = ...
+# Apply foreign function to tensor
+out = enzyme("test.c", "f").apply(inp)
+# Derive gradient
+out.backward()
+print(inp.grad)
+\end{minted}
+\end{minipage}& \begin{minipage}[T]{0.53\linewidth}
+\begin{minted}[fontsize=\small]{python}
+import tensorflow as tf
+from tf_enzyme import enzyme
+
+inp = tf.Variable(...)
+# Use external C code as a regular TF op
+out = enzyme(inp, filename="test.c",
+                  function="f")
+# Results is a TF tensor
+out = tf.sigmoid(out)
+\end{minted}
+\end{minipage}
+\end{tabular}
+    \caption{\textbf{\textit{Top:}} Sample glue code for how to use Enzyme to produce a custom operator for an ML framework. \textbf{\textit{Left+Right:}}
+    Sample code of using Enzyme to provide gradients of foreign code in PyTorch and TensorFlow, respectively.}
+    \label{fig:mlframeworks}
+\end{figure}
+
+
+\subsection{Limitations}
+\todo{dynamic code not working}
+\todo{say not working on exceptionbased code}
+\todo{strict aliasing (no unions)}
+\todo{turn on TBAA}
+\todo{memcpy of mixed types}

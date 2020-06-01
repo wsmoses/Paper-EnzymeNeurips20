@@ -1,0 +1,38 @@
+\section{Evaluation}
+\label{sec:eval}
+
+\input{figs/pipeline}
+
+We evaluate the Enzyme approach by measuring the runtime of seven benchmarks. These benchmarks include the three reverse-mode benchmarks from Microsoft's machine-learning focused ADBench suite: bundle analysis (BA), a long short term memory model (LSTM), and a gaussian mixture model (GMM). We also differentiate two integrators (Euler, RK4) from the Odeint header-only ODE solver library \cite{ahnert2011odeint}; a simple Fast Fourier Fransform (FFT); and a mesh-simulation of the Brusselator chemical dynamics (Bruss) \cite{feinberg1987chemical} recently explored in the context of Neural Differential Equations\cite{rackauckas2020universal}.
+
+\todo{why we chose what we chose.}
+
+\begin{figure}
+    \centering
+
+\begin{tabular}{cc}
+\hspace*{-1cm}
+\begin{minipage}[T]{0.69\linewidth}
+\includegraphics[width=0.99\linewidth]{figs/all.pdf}
+\end{minipage}
+&
+\begin{minipage}[T]{0.29\linewidth}
+\hspace*{-1cm} {\scriptsize \begin{tabular}{r|c|c|c|c}
+& Enzyme& Ref& Tapenade& Adept\\
+BA& \textbf{0.250}& 0.442& 0.391& 1.447\\
+LSTM& \textbf{2.405}& 4.426& 4.026& 7.540\\
+GMM& 0.261& 0.482& \textbf{0.130}& 0.725\\
+Euler& \textbf{0.185}& 14.258& N/A& 8.650\\
+RK4& \textbf{3.929}& 12.904& N/A& 6.335\\
+FFT& \textbf{0.182}& \textbf{0.182}& N/A& 2.439\\
+Bruss& \textbf{0.182}& 0.183& 0.514& 3.444\\
+\end{tabular}}
+\end{minipage}
+\end{tabular}
+    \caption{\textbf{\textit{Left:}} Relative speedup of AD systems on the benchmark suite. A red X denotes programs that an AD system does not produce a correct gradient (after accounting for the Tapenade corrections present in ADBench). For each benchmark, we take the geometric mean of the runtime for all test cases, normalizing to the victor. A value of 1.0 denotes the fastest AD system tested for that benchmark, whereas a value of 0.5 denotes that an AD system produced a gradient which took twice as long. \textbf{\textit{Right:}} table with geometric mean runtime in seconds. N/A indicates a benchmark did not work with that system, perhaps producing incorrect results.}
+    \label{fig:eval}
+\end{figure}
+
+Specifically, to evaluate the effectiveness of AD on optimized IR, we construct two pipelines shown in Figure \ref{fig:pipeline}. The Enzyme pipeline consists of running optimizations before Enzyme's AD, followed by a second round of optimizations. The Reference (Ref) pipeline is identical to the Enzyme pipeline, except that AD is performed before the first round of optimization. This allows us to effectively evaluate the importance of optimization on AD without considering additional confounding factors (such as differing tape implementations) between Enzyme and existing source AD systems. We ran our experiments on a ``quiesced'' AWS c4.8xlarge instance with 60 GiB of memory and 18 cores. To minimize variance, we disabled hyperthreading and Turbo Boost. Taking the geometric mean across all benchmarks, we find that Enzyme outperforms Reference by a factor of is 2.851.
+
+We also compare against the two fastest C/C++ AD tools evaluated in ADBench. These results are presented in Figure \ref{fig:eval}. Enzyme demonstrate superior performance for 7 of the 8 benchmarks. Furthermore the reference pipeline achieves similar performance to Tapenade on the BA and LSTM benchmarks, suggesting that Enzyme's advantage stems from running optimizations first. Tapenade's superior performance on GMM and Enzyme's superior performance on Bruss, however, can be explained by differences in how Enzyme and Tapenade implement their tape structures. Initial optimization also makes a significant impact on the Euler and RK4 tests, explaining much of the performance gap between Enzyme and Adept, whereas Enzyme's more efficient tape structure explains its superior performance on FFT.

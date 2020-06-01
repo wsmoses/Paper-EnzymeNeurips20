@@ -1,0 +1,66 @@
+wm priority order:
+1) ODE O0 benchmarks
+2) Make figures
+3) Write Design
+...
+
+vc priority order:
+1) Implementation/Integration
+2) Intro
+
+TBD:
+* why is hard
+* conclusion
+* evaluation
+
+Abstract ~0.5pgs
+
+Introduction
++ Utility
++ Related Work
+
+Why compiler AD + is hard:
+* Norm / optimizations are good \wmnote{make}
+* You type analysis lest you fail \wmnote{make}
+
+Design
+ + Design forward/reverse
+ + Plugin
+ + type analysis?
+ + optimization
+ + Shadow memor
+ + Calling Convention
+ + Cache
+ + Limitations
+
+Implementation/Integration (What is the usable status and the interesting ideas):
+ + Native AD
+   - Clang
+     - Multisource [analogy to LTO]
+       * make a figure \wmnote{make}
+     - Custom gradients (custom clang necessary)
+     - //extern int diffe\_dup;
+   - Julia
+     - Design/JIT integratino
+     - Limitations
+     - Zygote limitation \wmnote{}
+   - Flang
+ + FF-AD
+   - TF/PyTorch \wmnote{Make figure}
+ + Cross language AD
+ + Custom gradients
+
+Evaluation:
+ Talk about what tests/why ** 
+ Figure of the scientific comp pipeline\wmnote{make}
+ Figure of comparision results \wmnote{make}
+ Figure/table of overall comparison \wmnote{make}
+ Generationations
+ 
+Conclusion:
+ Future work: AD-specification opt
+ GPU backend to generate GPU code from existing
+ Take in in parallel/gpu from tapir/omp/etc
+ Ham it up about don't make a new diffe programming unless you need
+ cross language ad disc
+ Future work: working with ML community to port phys engines/etc

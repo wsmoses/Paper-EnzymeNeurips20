@@ -1,0 +1,47 @@
+
+
+% \begin{abstract}
+% This paper presents Enzyme, a high-performance automatic differentiation (AD) toolkit, capable of taking derivatives of statically analyzable programs in any LLVM\cite{LLVM} based language (C, C++, Fortran, Julia\cite{bezanson2017julia}, Rust\cite{Matsakis2014-ik}, Swift\cite{wilde2011swift} MLIR\cite{Lattner2020-oi}, etc.). By also integrating Enzyme into existing machine learning frameworks such as PyTorch and Tensorflow, we allow programmers to incorporate existing programs into their deep learning or differential programming workflow, without having to rewrite the legacy program.
+% 
+% % todo remove this sentence
+% Machine learning frameworks such as PyTorch\cite{paszke2017automatic} and Tensorflow\cite{abadi2016tensorflow} have become widespread as the primary workhorses of the modern machine learning community. %
+% In order to compute the necessary gradients for algorithms such as backpropagation\cite{hecht1992theory}, bayesian inference, and uncertainty quantification \cite{Wang2018-yr}, however, programmers are required to rewrite all of their code to be in said framework. This rewriting is especially problematic for applying machine learning to new domains as existing tools like physics simulators\cite{feng2016fastpm, broughton2020tensorflow, NIPS2018_7948, degrave2019differentiable, hu2019difftaichi}, game engines, climate models \cite{Stevens2020-ir}, and medical models\cite{alquraishi2019end} that are not written in the domain specific languages of machine learning frameworks. To remedy this, we created .  Moreover by leveraging static analysis, Enzyme is able to outperform existing state of the art automatic differentiation tools on both a standard suite of problems in computer vision and machine learning as well as a set of sample applications.
+% \end{abstract}
+
+%On a machine-learning focused benchmark suite including Microsoft's ADBench, AD on optimized IR achieves a geomean speedup of 2x\todo{put real number} over pre-optimizatized IR\@. 
+% Enzyme produces fast gradients with state-of-the-art performance by performing AD on optimized IR rather than on the source code like .
+
+%todo should touch on Enzyme.jl
+
+% Computing fast gradients from low level information, however, presents several challenges.
+
+%thereby ...  
+% that encompass backpropagation, bayesian inference, uncertainty quantification
+
+% intro sentence: This tedious and error-prone process has even resulted in a variety of domain-specific languages to provide differentiable primitives for particular application domains.
+
+
+%% This rewriting is especially problematic for applying machine learning to new domains as existing tools like physics simulators, game engines, climate models, and medical models that are not written in the domain specific languages of machine learning frameworks.
+
+
+
+In order to compute the necessary gradients for algorithms such as backpropagation, bayesian inference, and uncertainty quantification, however, programmers today must rewrite all of their code for a differentiable domain-specific language.  This paper presents Enzyme, a high-performance automatic differentiation (AD) compiler plugin for the LLVM compiler framework, which is capable of computing gradients of statically analyzable programs expressed in the LLVM intermediate representation (IR).
+Enzyme can differentiate programs in any language whose compiler targets LLVM IR, including C, C++, Fortran, Julia, Rust, Swift, MLIR, etc.  
+
+By synthesizing gradients from legacy code, programmers can 
+%incorporate a wealth of new tools..
+
+Moreover, using Enzyme we have created a foreign-function interface for existing machine learning frameworks such as PyTorch and Tensorflow that automatically defines and computes gradients of foreign code.
+
+\wmnote{ do we consider tf a dsl? }
+
+
+
+
+% Instead of Rewriting Legacy Code for Machine Learning, Automatically Synthesize Fast Gradients
+
+This enables programmers to incorporate existing programs into their deep learning or differential programming workflow, without having to rewrite the legacy program.
+
+% todo remove this sentence
+Machine learning frameworks such as PyTorch and Tensorflow have become widespread as the primary workhorses of the modern machine learning community. %
+  To remedy this, we created .  Moreover by leveraging static analysis, Enzyme is able to outperform existing state of the art automatic differentiation tools on both a standard suite of problems in computer vision and machine learning as well as a set of sample applications.

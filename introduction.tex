@@ -1,0 +1,169 @@
+\section{Introduction}
+\label{sec:intro}
+
+Machine learning frameworks such as PyTorch\cite{paszke2017automatic} and Tensorflow\cite{abadi2016tensorflow} have become widespread as the primary workhorses of the modern machine learning community. In order to compute the necessary gradients for algorithms such as backpropagation\cite{hecht1992theory}, bayesian inference, and uncertainty quantification \cite{Wang2018-yr}, however, programmers are required to rewrite all of their code to be in said framework. This rewriting is especially problematic for applying machine learning to new domains as existing tools like physics simulators\cite{feng2016fastpm, broughton2020tensorflow, NIPS2018_7948, degrave2019differentiable, hu2019difftaichi}, game engines, climate models \cite{Stevens2020-ir}, and medical models\cite{alquraishi2019end} that are not written in the domain specific languages of machine learning frameworks. 
+%Additionally, as the field of differential programming has become more mature, the desire for differentiation as a first class operation in programming languages has resulted in many new automatic differentiation frameworks \cite{maclaurin2015autograd,jax2018github,SwiftAutodiff,zygoteMlsys}.
+
+This rewriting has been identified as a quintessential challenge of applying machine learning to scientific computing.
+
+"Integrating Machine Learning within in situ Application Workflows. The growing data sizes
+and complexity associated with scientific applications, increasing performance gap between com-
+pute and I/O capabilities, and significant data management challenges and costs at extreme scales
+have led to significant interest in and support for in situ and in-transit data processing [432]. As
+ML techniques become an important part of scientific application workflows, scalable in situ and
+in-transit formulations and implementations of these techniques are also increasingly important.
+Such implementations present significant challenges at all levels, from algorithmic formulations
+and programming abstractions suitable to online and in situ and in-transit execution to runtime
+services to manage the control and data flow of the overall workflow. For example, integrating
+current ML libraries, such as Theano [416] and Caffe [414], requires significant code changes to
+scientific workflows and analysis applications." \cite{Baker2019-ty}
+
+
+
+The need to compute efficient derivatives has become necessary across a diverse set of domains ranging from machine learning, scientific programming, and more. 
+
+Uses in Neural ODEs\cite{chen2018neural}.
+
+There are four things desired from an AD tool: generality (the ability to differentiate arbitrary programs), ease of use, speed (computing derivatives should be efficient), and correctness (producing the right answer). Moreover, broadly speaking, automatic differentiation tools can be separated into three categories.
+
+\define{Operator-overloading} approaches take advantage existing functionality compute derivatives of functions alongside the original code. Examples of this include Adept\cite{adept}, which provides differentiable types in C++ that . These approaches require rewriting your source code to use the differentiable types/operation in place of standard language utilities, and can often be slow as they must store what operations are taking place in order to later differentiate.
+
+\define{Source-rewriting} approaches analyze the source code of programs and emit new source code that computes the derivative of a function. Examples include Tapenade\cite{TapenadeRef13}, a framework which computes forward and backwards mode derivatives for C and Fortran programs; and Zygote\cite{zygoteArxiv,zygoteDP,zygoteMlsys}, a framework that dynamically creates derivative functions in Julia's JIT. Such tools can be more efficient than operator-overloading approaches as they can statically analyze the computation. They also tend to only work with programs in a specific language, sometimes even only a subset of programs in that language.
+%require the whole source needed for derivatives to be available at compile time and not automatically generated, say in a JIT. Derivatives computed with such tools, however, are easy to debug as it is clear what computation they are performing.
+
+Finally, \define{high-level differential programming frameworks} approaches provide a library or domain-specific language (DSL) for users to write differential programs in. Such approaches dynamically create derivative functions for use by programmers and often just-in-time (JIT) compile derivatives for performance. Examples of this include DiffTaichi\cite{hu2019difftaichi}, a DSL for physics simulations; Halide\cite{Li:2018:DPI}, a DSL for image processing; PyTorch\cite{paszke2017automatic}, 
+and TensorFlow\cite{abadi2016tensorflow}, Python libraries for machine learning. Such approaches require rewriting programs to be compatible with the framework, and AutoGrad\cite{maclaurin2015autograd} and JaX\cite{jax2018github}, Python libraries for differentiating numpy-style programs, also fall into this category. Programmers hoping to use these tools must rewrite their code to be compatible with the desired framework, but are often rewarded with high-level or domain-specific optimizations.
+
+\wmnote{Discuss major need for high performance AD in probabilistic programming such as \cite{cusumano2019gen} }
+
+We present Enzyme, an efficient cross-platform compiler for automatic differentiation.  This paper makes the following contributions:
+\begin{itemize}
+
+\item Enzyme, a compiler plugin for LLVM that can synthesize high-performing gradients of statically analyzable code in LLVM IR, including IR generated by compiler frontends for C, C++, Fortran, Rust, etc.
+
+\item PyTorch-Enzyme, a foreign-function interface for the PyTorch machine learning framework that allows programmers to use code written in LLVM-compiled languages in their machine-learning workflows, as well as a similar foreign-function interface for TensorFlow.
+
+\item Enzyme.jl, a package that uses Enzyme to synthesize high-performing gradients of Julia code, which demonstrates that gradients of code written in a dynamic high-level language can be generated statically and perform well with only low-level information.
+
+\item A study demonstrating that AD as part of the compilation process can outperform source-level tools on a standard machine learning benchmark suite~\cite{adBench} and achieve state-of-the-art performance.
+\end{itemize}
+
+There is therefore an unmet need of being able to take derivatives large hole of being able to provide 
+
+
+%Embedding automatic differentiation as a first class citizen of the language, as is done in Swift\cite{SwiftAutodiff} arguably falls into this category.
+
+\subsection{Related Work}
+
+Clad is a plugin the the Clang compiler that implements forward and reverse mode automatic differentiation on a subset of C/C++ \cite{Vassilev_Clad}.
+% tested on SmallPT raytracer and The ROOT Framework [15] is widely adopted in high-energy physics for data analysis. It offers
+a wide range of mathematical tools for fitting and minimization. These tools use extensively
+derivatives and some of them are hand-written while others are numerically calculated. We plan
+on adopting Clad in ROOT6 through its C++ interpreter – Cling [13]
+
+\subsection{Compilation and AD}
+Performing derivatives before traditional optimizations have occurred, as in operator-overloading and source-rewriting tools, can result in asymptotically worse performance. Consider the example in Figure \ref{fig:licm}.
+
+\begin{figure*}
+    \centering
+\begin{minted}[fontsize=\small]{c}
+double mag(const double* x);//Compute magnitude in O(N)
+void norm(double* out, double* in) {
+    // double res = mag(in); code motion optimization can move outside the loop
+    for(int i=0; i<N; i++) { out[i] = in[i]/mag(in); }
+}
+\end{minted}
+\begin{tabular}{c|c}
+\begin{minipage}[T]{0.49\linewidth}
+\begin{minted}[fontsize=\small]{c}
+// LICM, then AD, O(N)
+void norm(double* out, double* dout,
+         double* in, double* din) {
+  double res = mag(in);
+  for(int i=0; i<N; i++) {
+    out[i] = in[i]/res;
+  }
+  double dres = 0;
+  for(int i=0; i<N; i++) {
+    dres += -in[i]*in[i]/mag * dout[i];
+    din[i] += dout[i]/mag;
+  }
+  dmag(in, din, dres);
+}
+\end{minted}
+\end{minipage}& \begin{minipage}[T]{0.49\linewidth}
+\begin{minted}[fontsize=\small]{c}
+// AD, then LICM O(N^2)
+void norm(double* out, double* dout,
+          double* in, double* din) {
+  double res = mag(in, n);
+  for(int i=0; i<n; i++) {
+    out[i] = in[i]/res;
+  }
+  for(int i=0; i<n; i++) {
+    double dres = -in[i]*in[i]/mag \
+                        * dout[i];
+    din[i] += dout[i]/mag;
+    dmag(in, din, n, dres);
+  }
+}
+\end{minted}
+\end{minipage}
+\end{tabular}
+    \caption{In the second program, mag is still able to be moved outside as it is the same every iteration, however, dmag cannot be moved outside the loop as it reads/writes to the same memory.
+}
+    \label{fig:licm}
+\end{figure*}
+
+Analyses such as alias analysis\wmnote{cite} and use-def analysis traditionally found in the compiler are critical for efficient automatic differentiation. They are necessary building blocks for robust \define{activity analysis}, which aims to detect which instructions could impact the derivative computation and thus not need to compute adjoints for.
+
+
+
+
+
+\begin{enumerate}
+    \item Prior, rewrite legacy software in PyTorch/TensorFlow -- much work
+    \item Manually define gradient (or use Tapendade + Adept slow and tedious)
+    \item FFI that automatically creates gradient function
+\end{enumerate}
+
+
+%Being able to both integrate existing code and do so efficiently, Enzyme enables researchers to incorporate machine learning into an entirely new class of tools and application. 
+
+
+
+
+% covid c rewrite https://twitter.com/neil_ferguson/status/1241835454707699713
+
+"The key to making a scientific ML stack work is by making every component compatible with the AD-system. This is because, if there is just one part of your loss function that isn't AD-compatible, then the whole network won't train" \cite{10.15200/winn.156631.13064}
+
+
+
+``[End-to-end] deep learning for [protein] structure prediction [has been difficult] stem[ming] from the technical challenge of developing an end-to-end differentiable model that rebuilds the entire structure prediction pipeline using differentiable primitives.'' \cite{alquraishi2019end}
+
+
+
+By incorporating several compiler technologies, we also demonstrate 
+
+
+
+
+
+* ML/Neurips:
+
+People made their own dsl/implementation in Tensorflow. Don't have to do a 
+
+* Systems story (AD story) how to do fused fwd/backwards optimizations how to do IR, type inference challenges, high level
+ + sample codes, optimizations, benchmarks
+
+* Differentiable programming crowd: cross-language AD [super cool in own right], integrating with legacy software
+
+Differentiable programming in LLVM based languages
+
+
+
+You don't have to write complicated losses in tensorflow math world:
+
+
+Differentiating C/C++ [Fortran, Rust, XLA, etc]; 
+fusing
