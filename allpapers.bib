@@ -77,7 +77,52 @@
  booktitle = {Proceedings of Machine Learning and Systems 2020},
  pages = {58--69},
  title = {Sense \&amp; Sensitivities: The Path to General-Purpose Algorithmic Differentiation},
- year = {2020}
+ year = {2020},
+ publisher = {ACM}
+}
+
+@article{pascual2016mixed,
+author = {Pascual, Val{\'e}rie and Hasco{\"e}t, Laurent},
+title = {Mixed-language automatic differentiation},
+journal = {Optimization Methods and Software},
+volume = {33},
+number = {4-6},
+pages = {1192-1206},
+year  = {2018},
+publisher = {Taylor & Francis},
+doi = {10.1080/10556788.2018.1435650},
+
+URL = { 
+        https://doi.org/10.1080/10556788.2018.1435650
+    
+},
+eprint = { 
+        https://doi.org/10.1080/10556788.2018.1435650
+    
+}
+
+}
+
+@article{narayanan2010adic2,
+  title={ADIC2: Development of a component source transformation system for differentiating C and C++},
+  author={Narayanan, Sri Hari Krishna and Norris, Boyana and Winnicka, Beata},
+  journal={Procedia Computer Science},
+  volume={1},
+  number={1},
+  pages={1845--1853},
+  year={2010},
+  publisher={Elsevier}
+}
+
+@article{griewank1996algorithm,
+  title={Algorithm 755: ADOL-C: a package for the automatic differentiation of algorithms written in C/C++},
+  author={Griewank, Andreas and Juedes, David and Utke, Jean},
+  journal={ACM Transactions on Mathematical Software (TOMS)},
+  volume={22},
+  number={2},
+  pages={131--167},
+  year={1996},
+  publisher={ACM New York, NY, USA}
 }
 
 @inproceedings{cusumano2019gen,
@@ -126,6 +171,26 @@
   publisher={Frontiers}
 }
 
+@book{Muchnick97,
+	Author = {Steven S. Muchnick},
+	Opt_Bibsource = {dblp computer science bibliography, http://dblp.org},
+	Opt_Biburl = {http://dblp.uni-trier.de/rec/bib/books/mk/Muchnick1997},
+	Opt_Isbn = {1-55860-320-4},
+	Opt_Timestamp = {Mon, 05 Jan 2004 14:58:03 +0100},
+	Publisher = {Morgan Kaufmann},
+	Title = {Advanced Compiler Design and Implementation},
+	Year = {1997}}
+	
+@book{10.5555/1455489,
+author = {Griewank, Andreas and Walther, Andrea},
+title = {Evaluating Derivatives: Principles and Techniques of Algorithmic Differentiation},
+year = {2008},
+isbn = {0898716594},
+publisher = {Society for Industrial and Applied Mathematics},
+address = {USA},
+edition = {Second}
+}
+
 @incollection{NIPS2018_7948,
 title = {End-to-End Differentiable Physics for Learning and Control},
 author = {de Avila Belbute-Peres, Filipe and Smith, Kevin and Allen, Kelsey and Tenenbaum, Josh and Kolter, J. Zico},
@@ -167,10 +232,43 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
   year={2018}
 }
 
-@misc{pytorchcustom, title={Extending TorchScript with Custom C Operators}, url={https://pytorch.org/tutorials/advanced/torch_script_custom_ops.html}, journal={Extending TorchScript with Custom C Operators - PyTorch Tutorials 1.5.0 documentation}, author={Torch Contributors}}
+@misc{pytorchcustom, title={Extending TorchScript with Custom C Operators}, url={https://pytorch.org/tutorials/advanced/torch_script_custom_ops.html}, journal={Extending TorchScript with Custom C Operators - PyTorch Tutorials 1.5.0 documentation}, author={Torch Contributors},year={2020}}
 
-@misc{tfcustom, title={Create an op  :   TensorFlow Core}, url={https://www.tensorflow.org/guide/create_op}, journal={TensorFlow}, author={Tensorflow Contributors}}
+@misc{tfcustom, title={Create an op  :   TensorFlow Core}, url={https://www.tensorflow.org/guide/create_op}, journal={TensorFlow}, author={Tensorflow Contributors},year={2020}
+}
 
+@inproceedings{tapir,
+  author = {Schardl, Tao B. and Moses, William S. and Leiserson, Charles E.},
+  title = {Tapir: Embedding Fork-Join Parallelism into LLVM's Intermediate Representation},
+  booktitle = {Proceedings of the 22nd ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming},
+  series = {PPoPP '17},
+  month = jan,
+  year = {2017},
+  isbn = {978-1-4503-4493-7},
+  location = {Austin, Texas, USA},
+  pages = {249--265},
+  numpages = {17},
+  pdf = {https://c.wsmoses.com/papers/tapir.pdf},
+  doi = {10.1145/3018743.3018758},
+  acmid = {3018758},
+  publisher = {ACM},
+  address = {New York, NY, USA},
+  award = {Best Paper Award},
+  reddit = {http://www.reddit.com/r/programming/comments/5ra59l/mit_says_their_modified_llvm_compiler_optimizes/},
+  mitnews = {http://news.mit.edu/2017/optimizing-code-compiler-parallel-programs-0130},
+  hackernews = {http://news.ycombinator.com/item?id=13568585},
+  blog = {/tapir}
+}
+@article{yu2018mathematical,
+  title={Mathematical analysis of chemical reaction systems},
+  author={Yu, Polly Y and Craciun, Gheorghe},
+  journal={Israel Journal of Chemistry},
+  volume={58},
+  number={6-7},
+  pages={733--741},
+  year={2018},
+  publisher={Wiley Online Library}
+}
 
 @article{rackauckas2020universal,
   title={Universal Differential Equations for Scientific Machine Learning},
@@ -190,37 +288,48 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
   publisher={Elsevier}
 }
 
-@inproceedings{ahnert2011odeint,
-  title={Odeint--solving ordinary differential equations in C++},
-  author={Ahnert, Karsten and Mulansky, Mario},
-  booktitle={AIP Conference Proceedings},
-  volume={1389},
-  number={1},
-  pages={1586--1589},
-  year={2011},
-  organization={American Institute of Physics}
+
+
+@article{ahnert2011odeint,
+author = {Ahnert,Karsten  and Mulansky,Mario },
+title = {Odeint -- Solving Ordinary Differential Equations in C++},
+journal = {AIP Conference Proceedings},
+volume = {1389},
+number = {1},
+pages = {1586-1589},
+year = {2011},
+doi = {10.1063/1.3637934},
+
+URL = { 
+        https://aip.scitation.org/doi/abs/10.1063/1.3637934
+    
+},
+eprint = { 
+        https://aip.scitation.org/doi/pdf/10.1063/1.3637934
+    
 }
 
-@software{jax2018github,
+}
+
+@misc{jax2018github,
   author = {James Bradbury and Roy Frostig and Peter Hawkins and Matthew James Johnson and Chris Leary and Dougal Maclaurin and Skye Wanderman-Milne},
   title = {{JAX}: composable transformations of {P}ython+{N}um{P}y programs},
   url = {http://github.com/google/jax},
   version = {0.1.55},
   year = {2018},
 }
-
-@inproceedings{Vassilev_Clad,
-  author = {Vassilev,V. and Vassilev,M. and Penev,A. and Moneta,L. and Ilieva,V.},
-  title = {{Clad -- Automatic Differentiation Using Clang and LLVM}},
-  journal = {Journal of Physics: Conference Series},
-  year = 2015,
-  month = {may},
-  volume = {608},
-  number = {1},
-  pages = {012055},
-  doi = {10.1088/1742-6596/608/1/012055},
-  url = {https://iopscience.iop.org/article/10.1088/1742-6596/608/1/012055/pdf},
-  publisher = {{IOP} Publishing}
+@article{Vassilev_Clad,
+	doi = {10.1088/1742-6596/608/1/012055},
+	url = {https://doi.org/10.1088%2F1742-6596%2F608%2F1%2F012055},
+	year = 2015,
+	month = {may},
+	publisher = {{IOP} Publishing},
+	volume = {608},
+	pages = {012055},
+	author = {V Vassilev and M Vassilev and A Penev and L Moneta and V Ilieva},
+	title = {Clad {\textemdash} Automatic Differentiation Using Clang and {LLVM}},
+	journal = {Journal of Physics: Conference Series},
+	abstract = {Differentiation is ubiquitous in high energy physics, for instance in minimization algorithms and statistical analysis, in detector alignment and calibration, and in theory. Automatic differentiation (AD) avoids well-known limitations in round-offs and speed, which symbolic and numerical differentiation suffer from, by transforming the source code of functions. We will present how AD can be used to compute the gradient of multi-variate functions and functor objects. We will explain approaches to implement an AD tool. We will show how LLVM, Clang and Cling (ROOT's C++11 interpreter) simplifies creation of such a tool. We describe how the tool could be integrated within any framework. We will demonstrate a simple proof-of-concept prototype, called Clad, which is able to generate n-th order derivatives of C++ functions and other language constructs. We also demonstrate how Clad can offload laborious computations from the CPU using OpenCL.}
 }
 
 @incollection{hecht1992theory,
@@ -240,12 +349,77 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
   year={2016}
 }
 
-@article{paszke2017automatic,
-  title={Automatic differentiation in pytorch},
-  author={Paszke, Adam and Gross, Sam and Chintala, Soumith and Chanan, Gregory and Yang, Edward and DeVito, Zachary and Lin, Zeming and Desmaison, Alban and Antiga, Luca and Lerer, Adam},
-  year={2017}
+@article{10.1145/277652.277670,
+author = {Diwan, Amer and McKinley, Kathryn S. and Moss, J. Eliot B.},
+title = {Type-Based Alias Analysis},
+year = {1998},
+issue_date = {May 1998},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {33},
+number = {5},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/277652.277670},
+doi = {10.1145/277652.277670},
+journal = {SIGPLAN Not.},
+month = may,
+pages = {106–117},
+numpages = {12}
 }
 
+
+ @misc{llvm_sroa, title={{LLVM}'s Analysis and Transform Passes}, url={https://llvm.org/docs/Passes.html}, author={LLVM Contributors}, year={2020}}
+ 
+ @misc{langref_2020, title={{LLVM} Language Reference Manual¶}, url={https://llvm.org/docs/LangRef.html}, author={LLVM Contributors}, year={2020}}
+
+@inproceedings{10.1145/277650.277670,
+author = {Diwan, Amer and McKinley, Kathryn S. and Moss, J. Eliot B.},
+title = {Type-Based Alias Analysis},
+year = {1998},
+isbn = {0897919874},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/277650.277670},
+doi = {10.1145/277650.277670},
+booktitle = {Proceedings of the ACM SIGPLAN 1998 Conference on Programming Language Design and Implementation},
+pages = {106–117},
+numpages = {12},
+location = {Montreal, Quebec, Canada},
+series = {PLDI ’98}
+}
+
+@InProceedings{paszke2017automatic,
+  title={Automatic differentiation in {PyTorch}},
+  author={Paszke, Adam and Gross, Sam and Chintala, Soumith and Chanan, Gregory and Yang, Edward and DeVito, Zachary and Lin, Zeming and Desmaison, Alban and Antiga, Luca and Lerer, Adam},
+  year={2017},
+   booktitle = {NIPS 2017 Workshop Autodiff},
+}
+
+@book{AhoLaSe06,
+	Author = {Alfred V. Aho and Monica S. Lam and Ravi Sethi and Jeffrey D. Ullman},
+	Edition = {Second},
+	Publisher = {Addison-Wesley},
+	Title = {Compilers: Principles, Techniques, and Tools},
+	Year = {2006}}
+	
+@inproceedings{shin2007comparison,
+  title={Comparison of two activity analyses for automatic differentiation: Context-sensitive flow-insensitive vs. context-insensitive flow-sensitive},
+  author={Shin, Jaewook and Hovland, Paul D},
+  booktitle={Proceedings of the 2007 ACM symposium on Applied computing},
+  pages={1323--1329},
+  year={2007}
+}
+
+@article{hascoet2005recorded,
+  title={“To be recorded” analysis in reverse-mode automatic differentiation},
+  author={Hasco{\"e}t, Laurent and Naumann, Uwe and Pascual, Val{\'e}rie},
+  journal={Future Generation Computer Systems},
+  volume={21},
+  number={8},
+  pages={1401--1417},
+  year={2005},
+  publisher={Elsevier}
+}
 
 @misc{SwiftAutodiff,
   title = {Differentiable Programming Mega-Proposal},
@@ -263,6 +437,46 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
   year={2015}
 }
 
+@article{rhodin2010ptx,
+  title={A {PTX} code generator for {LLVM}},
+  author={Rhodin, Helge},
+  journal={Oct},
+  volume={29},
+  pages={1--63},
+  year={2010}
+}
+
+@article{piasecki1997control,
+  title={Control of contaminant releases in rivers. I: Adjoint sensitivity analysis},
+  author={Piasecki, Michael and Katopodes, Nikolaos D},
+  journal={Journal of hydraulic engineering},
+  volume={123},
+  number={6},
+  pages={486--492},
+  year={1997},
+  publisher={American Society of Civil Engineers}
+}
+
+@article{li2004adjoint,
+  title={Adjoint sensitivity analysis for time-dependent partial differential equations with adaptive mesh refinement},
+  author={Li, Shengtai and Petzold, Linda},
+  journal={Journal of Computational Physics},
+  volume={198},
+  number={1},
+  pages={310--325},
+  year={2004},
+  publisher={Elsevier}
+}
+
+@incollection{biegler2003large,
+  title={Large-scale PDE-constrained optimization: an introduction},
+  author={Biegler, Lorenz T and Ghattas, Omar and Heinkenschloss, Matthias and van Bloemen Waanders, Bart},
+  booktitle={Large-Scale PDE-Constrained Optimization},
+  pages={3--13},
+  year={2003},
+  publisher={Springer}
+}
+
 @article{Li:2018:DPI,
     title = {Differentiable programming for image processing and deep learning in {Halide}},
     author = {Li, Tzu-Mao and Gharbi, Micha{\"e}l and Adams, Andrew and Durand, Fr{\'e}do and Ragan-Kelley, Jonathan},
@@ -271,6 +485,39 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
     number = {4},
     pages = {139:1--139:13},
     year = {2018}
+}
+
+@inproceedings{holewinski2011ptx,
+  title={{PTX} back-end: {GPU} programming with {LLVM}},
+  author={Holewinski, Justin},
+  booktitle={The Ohio State University. LLVM Developer’s Meeting. November},
+  volume={18},
+  year={2011}
+}
+
+@inproceedings{grosser2011polly,
+  title={Polly-Polyhedral optimization in LLVM},
+  author={Grosser, Tobias and Zheng, Hongbin and Aloor, Raghesh and Simb{\"u}rger, Andreas and Gr{\"o}{\ss}linger, Armin and Pouchet, Louis-No{\"e}l},
+  booktitle={Proceedings of the First International Workshop on Polyhedral Compilation Techniques (IMPACT)},
+  volume={2011},
+  pages={1},
+  year={2011}
+}
+
+@article{gysi2020domain,
+  title={Domain-Specific Multi-Level IR Rewriting for GPU},
+  author={Gysi, Tobias and M{\"u}ller, Christoph and Zinenko, Oleksandr and Herhut, Stephan and Davis, Eddie and Wicky, Tobias and Fuhrer, Oliver and Hoefler, Torsten and Grosser, Tobias},
+  journal={arXiv preprint arXiv:2005.13014},
+  year={2020}
+}
+
+@inproceedings{doerfert2018compiler,
+  title={Compiler optimizations for OpenMP},
+  author={Doerfert, Johannes and Finkel, Hal},
+  booktitle={International Workshop on OpenMP},
+  pages={113--127},
+  year={2018},
+  organization={Springer}
 }
 
 @article{adept,
@@ -284,16 +531,13 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
   publisher={ACM New York, NY, USA}
 }
 
-@article{mmarxiv,
-  title         = "Dynamic Automatic Differentiation of {GPU} Broadcast Kernels",
-  author        = "Revels, Jarrett and Besard, Tim and Churavy, Valentin and De
-                   Sutter, Bjorn and Vielma, Juan Pablo",
-  month         =  oct,
-  year          =  2018,
-  archivePrefix = "arXiv",
-  eprint        = "1810.08297",
-  primaryClass  = "cs.MS",
-  arxivid       = "1810.08297"
+@misc{mmarxiv,
+    title={Dynamic Automatic Differentiation of GPU Broadcast Kernels},
+    author={Jarrett Revels and Tim Besard and Valentin Churavy and Bjorn De Sutter and Juan Pablo Vielma},
+    year={2018},
+    eprint={1810.08297},
+    archivePrefix={arXiv},
+    primaryClass={cs.MS}
 }
 
 @TECHREPORT{Stevens2020-ir,
@@ -305,18 +549,15 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
   year        =  2020
 }
 
-
-@ARTICLE{Baker2019-ty,
-  title    = "Workshop Report on Basic Research Needs for Scientific Machine
-              Learning: Core Technologies for Artificial Intelligence",
-  author   = "Baker, Nathan and Alexander, Frank and Bremer, Timo and Hagberg,
-              Aric and Kevrekidis, Yannis and Najm, Habib and Parashar, Manish
-              and Patra, Abani and Sethian, James and Wild, Stefan and Willcox,
-              Karen and Lee, Steven",
-  month    =  feb,
-  year     =  2019,
-  language = "en",
-  doi      = "10.2172/1478744"
+@article{Baker2019-ty,
+title = {Workshop Report on Basic Research Needs for Scientific Machine Learning: Core Technologies for Artificial Intelligence},
+author = {Baker, Nathan and Alexander, Frank and Bremer, Timo and Hagberg, Aric and Kevrekidis, Yannis and Najm, Habib and Parashar, Manish and Patra, Abani and Sethian, James and Wild, Stefan and Willcox, Karen and Lee, Steven},
+abstractNote = {Scientific Machine Learning (SciML) and Artificial Intelligence (AI) will have broad use and transformative effects across the Department of Energy. Accordingly, the January 2018 Basic Research Needs workshop identified six Priority Research Directions (PRDs). The first three PRDs describe foundational research themes that correspond to the need for domain-awareness (PRD #1), interpretability (PRD #2), and robustness (PRD #3). The other three PRDs describe capability research themes and correspond to the three major use cases for massive scientific data analysis (PRD #4), machine learning-enhanced modeling and simulation (PRD #5), and intelligent automation and decision-support for complex systems (PRD #6). The Priority Research Directions provide a sound basis for a coherent, long-term research and development strategy in SciML and AI. Over the last decade, DOE investments in applied mathematics have laid the groundwork for the type of basic research that will underpin key advances in the six PRDs. Such advances will build on the work from leading researchers in optimization, linear algebra, high-performance solvers and algorithms, multiscale modeling and simulation, complex systems research, uncertainty quantification, and the new basic research areas that will emerge from the pursuit of transformative technologies.},
+doi = {10.2172/1478744},
+journal = {USDOE Office of Science (SC)},
+place = {United States},
+year = 2019,
+month = {2}
 }
 
 
@@ -436,4 +677,20 @@ url = {http://papers.nips.cc/paper/7948-end-to-end-differentiable-physics-for-le
               Distributed computing",
   issn     = "0965-9978",
   doi      = "10.1016/j.advengsoft.2019.02.002"
+}
+
+
+@ARTICLE{Elliott2018-gr,
+  title     = "The simple essence of automatic differentiation",
+  author    = "Elliott, Conal",
+  journal   = "Proc. ACM Program. Lang.",
+  publisher = "Association for Computing Machinery",
+  volume    =  2,
+  number    = "ICFP",
+  pages     = "1--29",
+  month     =  jul,
+  year      =  2018,
+  address   = "New York, NY, USA",
+  keywords  = "category theory, automatic differentiation, program calculation",
+  doi       = "10.1145/3236765"
 }

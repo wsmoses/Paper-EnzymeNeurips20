@@ -1,0 +1,51 @@
+ \cite{Baker2019-ty}.
+
+"Integrating Machine Learning within in situ Application Workflows. The growing data sizes
+and complexity associated with scientific applications, increasing performance gap between com-
+pute and I/O capabilities, and significant data management challenges and costs at extreme scales
+have led to significant interest in and support for in situ and in-transit data processing [432]. As
+ML techniques become an important part of scientific application workflows, scalable in situ and
+in-transit formulations and implementations of these techniques are also increasingly important.
+Such implementations present significant challenges at all levels, from algorithmic formulations
+and programming abstractions suitable to online and in situ and in-transit execution to runtime
+services to manage the control and data flow of the overall workflow. For example, integrating
+current ML libraries, such as Theano [416] and Caffe [414], requires significant code changes to
+scientific workflows and analysis applications." 
+
+
+in languages like C/C++/Fortran such as Adept~\cite{adept}, ADOL-C~\cite{griewank1996algorithm}, Tapenade~\cite{TapenadeRef13}. These tools are wonderful in that the reduce the amount of the codebase that needs rewriting to be compatible. However, all of these tools 
+
+, but still require rewriting a certain amount of rewriting of your code. Moreover, these tools can also be inefficient and requires expert knowledge of both the codebase and AD to ensure generated derivatives are 
+, making using 
+
+Additionally, as the field of differential programming has become more mature, the desire for differentiation as a first class operation in programming languages has resulted in many new automatic differentiation frameworks .
+
+The need to compute efficient derivatives has become necessary across a diverse set of domains ranging from machine learning, scientific programming, and more. 
+
+There are four things desired from an AD tool: generality (the ability to differentiate arbitrary programs), ease of use, speed (computing derivatives should be efficient), and correctness (producing the right answer). Moreover, broadly speaking, automatic differentiation tools can be separated into three categories.
+
+%require the whole source needed for derivatives to be available at compile time and not automatically generated, say in a JIT. Derivatives computed with such tools, however, are easy to debug as it is clear what computation they are performing.
+
+
+
+There is therefore an unmet need of being able to take derivatives large hole of being able to provide 
+
+\subsection{Compilation and AD}
+Performing derivatives before traditional optimizations have occurred, as in operator-overloading and source-rewriting tools, can result in asymptotically worse performance. Consider the example in Figure~\ref{fig:licm}.
+
+
+
+
+
+
+* ML/Neurips:
+
+People made their own dsl/implementation in Tensorflow. Don't have to do a 
+
+* Systems story (AD story) how to do fused fwd/backwards optimizations how to do IR, type inference challenges, high level
+ + sample codes, optimizations, benchmarks
+
+* Differentiable programming crowd: cross-language AD [super cool in own right], integrating with legacy software
+
+Differentiable programming in LLVM based languages
+

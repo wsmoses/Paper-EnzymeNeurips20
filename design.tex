@@ -1,154 +1,18 @@
 \section{Design}
 \label{sec:design}
-Though it is clear that synthesizing gradients is better done after optimization, doing so requires working at a lower-level of abstraction which presents additional challenges.
 
-Enzyme works in the following stages:
-\begin{itemize}
-    \item Analyze types and instruction activity
-    \item For all active values, allocate and zero memory to create corresponding shadow values.
-    \item For each Basicblock \texttt{B}, emit the adjoint for all instruction of \texttt{B} in reverse order
-    \item Optimize
-\end{itemize}
+Enzyme is composed of three stages: \define{type analysis} determines the underlying types of values, \define{activity analysis} determines what instructions and values can impact the gradient calculation, and \define{synthesis} creates the necessary functions to compute the gradient. A core design goal of Enzyme is to operate upon optimized IR. As seen in Figure \ref{fig:licm} this can result in significant benefits such as more simpler and more optimized gradients, though requires working on a low-level representation.
 
-
-\AtBeginEnvironment{minted}{%
-  \renewcommand{\fcolorbox}[4][]{#4}}
-
-
-
-\newminted[codebox]{llvm}{texcl=true, autogobble=true,breaklines}
-
-\begin{figure}
-    \centering
-\begin{tikzpicture}
-\node[inner sep=0, outer sep=0] (orig) {
-\begin{minipage}[T]{0.49\linewidth}
-\begin{codebox}
-define double @reluf(double %x)
-entry:
-  ; Shadow values for reverse
-  ; alloca %d\_x = 0.0
-  ; alloca %d\_call = 0.0
-  ; alloca %d\_result = 0.0
-  br (%x > 0), if.true, if.end
-if.true:
-  %call = f(%x)
-  br cond.end
-if.end:
-  %res = phi[%call, if.true],      [0, entry]
-  ret %res
-\end{codebox}
-\end{minipage}
-};
-
-\node[inner sep=0, outer sep=0, xshift=6.2cm] (reverse) {
-\begin{minipage}[T]{0.49\linewidth}
-\begin{minted}[fontsize=\small]{llvm}
-reverse_if.end:
-  ; adjoint of return
-  store %d_result = 1.0
-  ; adjoint of %result phi node
-  %d_call += if %x > 0.0, (load %d_result), else 0
-  store %d_result = 0.0
-  br %cmp, %reverse_if.true, %reverse_entry
-reverse_if.true:
-  ; adjoint of %call
-  %df = @diffe_f(%x)
-  %d_x += %df * (load %call)
-  store %d_call = 0.0
-  br %reverse_entry
-reverse_entry:
-  %0 = load %d_x
-  ret %0
-\end{minted}
-\end{minipage}
-};
-\end{tikzpicture}
-    \caption{Example differential reverse creation for \texttt{relu(f(x))}. The left hand side shows the LLVM IR for the original computation, with commented out shadow allocations of active variables. The right hand side shows the reverse pass that Enzyme would generate to propagate gradient information across the program.}
-    \label{fig:reluf}
-\end{figure}
-
-\begin{figure}
-\centering
-\begin{minted}[fontsize=\small]{c}
-double sum(double* x) {
-  double total = 0;
-  for(int i=0; i<10; i++)
-    total += read() * x[i];
-  return total;
-}
-
-void diffe_sum(double* x, double* xp) {
-  return __enzyme_autodiff(sum, x, xp);
-}
-
-void diffe_sum(double* x, double* xp) {
-  double* read_cache = malloc(10*8);
-  for(int i=0; i<10; i++)
-    readCache[i] = read();
-  // reverse
-  for(int i=10-1; i>=0; i--)
-    xp[i] += read_cache[i];
-  }
-  free(read_cache);
-}
-\end{minted}
-\caption{Example of caching the result of read for the reverse pass and allocations for loops.}
-\label{fig:cacheloop}
-\end{figure}
-
-\begin{figure}
-\begin{minted}[fontsize=\small]{c}
-double loadsq(double* x) {
-  return x[0] * x[0];
-}
-void f(double* x) {
-  *x = loadsq(x);
-}
-
-{double,double} augmented_loadsq(double* x) {
-  return {/*return val*/x[0]*x[0], /*cache*/x[0] };
-}
-
-void diffe_loadsq(double* x, double* d_x, double d_ret, double cache) {
-  d_x[0] += 2 * cache * d_ret;
-}
-
-void diffe_f(double* x, double* xp) {
-  {call, cache} = augmented_loadsq(x);
-  *x = call;
-  double d_ret = *d_x;
-  *d_x = 0;
-  diffe_loadsq(x, d_x, d_ret, cache);
-}
-\end{minted}
-\caption{Creating an augmented forward pass for a function to ensure requisite values are cached for the reverse.}
-\label{fig:cacheaugment}
-\end{figure}
-
-\subsection{Shadow Memory}
-For every active value in the original program, Enzyme creates and zero's a shadow version of that value. 
-
-Local data structures with active variable need to be
-duplicated to store derivative information
-* Leverage all data structures are created by specific
-memory instructions (malloc/free/new/delete/etc)
-* Allocations are copied in forward pass to create
-differential structures
-* Frees are delayed until the reversed version of the
-block that allocated in case values are used in the
-reverse pass
+Gradients synthesized by Enzyme contain two parts: a \define{forward pass} that mirrors the original code and a \define{reverse pass} that computes the gradient by inverting the instructions in the forward pass. Inverted instructions in the reverse pass are known as \define{adjoint}s. For all differentiable instructions in LLVM, Enzyme defines an adjoint to describe how gradients propagate through the instructions.
 
 \subsection{Type Analysis}
+One challenge of performing AD on LLVM IR (and even C/C++) is that LLVM types do not necessarily represent the type of the underlying data. For example, the \texttt{memcpy} function copies data between generic pointers without types (\texttt{void*}). Creating a correct gradient for \texttt{memcpy}, however, requires knowing the type of the memory being copied. As shown in Figure \ref{fig:memcpy}, copying 8 bytes of double data requires performing one double (8-byte) addition in the reverse pass, whereas copying 8 bytes of float data requires two float (4-byte) additions. As these two operations are incompatible with each other (resulting in an incorrect gradient), Enzyme must be able to determine the type of the data being copied.
 
-Types inside LLVM IR (and even C/C++) do not necessarily represent the type of the underlying data. For example, the \texttt{memcpy} function which copies data operates on generic pointers without types (\texttt{void*}). Creating a correct gradient for \texttt{memcpy}, however, requires knowing the type of the memory being copied. If you were copying 8 bytes of double data you would perform one double (8-byte) addition in the reverse pass, whereas if you were copying 8 bytes of float data you would need to do two float (4-byte) additions.
+Enzyme does so by creating a new interprocedural type analysis. Every value in a function is given a \define{type tree} that describes the known type at any given byte offset in the value. If the type at a particular offset is a pointer type, we have a new type tree that represents the types inside that offset. As an example the type tree \verb|{[]:Pointer, [0]:Double, [8]:Integer}| represents a pointer to a struct that contains first a double at byte 0, then an integer at byte 8.
 
-Taking the derivative of instructions such as \texttt{memcpy} depends on the type of the data being copied. As demonstrated in Figure \ref{fig:memcpy}, the derivative of a \texttt{memcpy} of memory containing doubles should add the propagate differential destination into the differential source, whereas a \texttt{memcpy} of pointer data should copy the differential source pointers into the differential destination in the forward pass, with nothing in the reverse. As these two operations are incompatible with each other (resulting in garbage data if the wrong one is used), we must be able to determine the type of the data being copied.
-
-We do so by creating a new interprocedural type analysis. We give every value in a function a \define{type tree} that describes the known type at any given byte offset in the value. If the type at a particular offset is a pointer type, we have a new type tree that represents the types inside that offset. As an example the type tree \verb|{[]:Pointer, [0]:Double, [8]:Integer}| represents a pointer to a struct that contains first a double at byte 0, then an integer at byte 8.
-
-Type analysis starts by initializing the type trees of all values to empty. Type based alias analysis (TBAA) is a type of metadata in LLVM that guarantees that the type of the data must be a specified type because of strict aliasing. Type analysis uses TBAA metadata to initialize its type trees for load and stores. For every type of instruction, type analysis implements a propagation rule specifying how types propagate forward and backward through that instruction. As an example, if the result of a load is known to be type T, then the pointer loaded must be a pointer to T at offset 0. Type analysis then runs all of the type propagation until a fixed point is reached.
-
+Type analysis initializes the type trees of all values to empty and uses type based alias analysis (TBAA) metadata to initialize the type trees of loads, stores, and \texttt{memcpy} operations.
+TBAA allows us to make assumptions about the underlying type because of strict aliasing~\cite{10.1145/277650.277670, langref_2020}. For every kind of instruction, Enzyme implements a type propagation rule that specifies how types flow through the instruction. As an example, if the result of a load is known to be type \texttt{T}, then the pointer loaded must be a pointer to \texttt{T} at offset 0. Type analysis then runs all of the type propagation rules until a fixed point is reached.
+\todo{connection to abstract interpretation}
 \begin{figure*}
     \centering
 \begin{minted}[fontsize=\small]{c}
@@ -160,9 +24,9 @@ void f(void* dst, void* src) { memcpy(dst, src, 8); }
 // Gradient memcpy for double inputs
 void grad_f(double* dst, double* ddst,
             double* src, double* dsrc) {
-  // Forward
+  // Forward pass
   memcpy(dst, src, 8);
-  // Reverse
+  // Reverse pass
   dsrc[0] += ddst[0];
   ddst[0] = 0;
   
@@ -175,9 +39,9 @@ void grad_f(double* dst, double* ddst,
 // Gradient memcpy for float inputs
 void grad_f(float* dst, float* ddst,
             float* src, float* dsrc) {
-  // Forward
+  // Forward pass
   memcpy(dst, src, 8);
-  // Reverse
+  // Reverse pass
   dsrc[0] += ddst[0];
   ddst[0] = 0;
   dsrc[1] += ddst[1];
@@ -186,29 +50,157 @@ void grad_f(float* dst, float* ddst,
 \end{minted}
 \end{minipage}
 \end{tabular}
-\caption{Memcpy}
+\caption{{\textbf{\textit{Top:}}} Call to \texttt{memcpy} for an unknown 8-byte object. {\textbf{\textit{Left:}}} Gradient for a \texttt{memcpy} of 8bytes of double data. {\textbf{\textit{Right:}}} Gradient for a \texttt{memcpy} of 8bytes of float data. }
 \label{fig:memcpy}
 \end{figure*}
 
 \subsection{Activity Analysis}
-Activity analysis is common in automatic differentiation systems to avoid taking gradients of instructions that don't impact the gradient computation. We also use it to avoid taking gradients of instructions for which that would be ill defined (e.g. what is the gradient of adding two integers). An instruction is active iff it takes a differential value and can propagate it to its return or another memory location. For example a function that counts the length of a an active input array would not be active. In our implementation of activity analysis, we leverage alias analysis and type analysis to prove that more instructions are inactive. As an example, any read-only function that returns an integer must be inactive.
+Activity analysis determines what instructions could impact the gradient computation and is common in automatic differentiation systems to avoid performing unnecessary adjoints~\cite{shin2007comparison}. Enzyme uses it to avoid taking gradients of instructions for which that would be ill defined (e.g. the \texttt{cpuid} instruction). An instruction is active iff it can propagate a differential value to its return or another memory location. For example a function that counts the length of a an active input array would not be active. In our implementation of activity analysis, we leverage LLVM's alias analysis~\cite[Ch.~12]{AhoLaSe06} and type analysis to help prove that instructions are inactive. As an example, any read-only function that returns an integer must be inactive since it cannot propagate adjoints through the return or any memory location.
+\todo{think about expanding this rule}
 
-\subsection{Combined Forward-Reverse Analysis}
-Whenever possible, it is desirable to compute both the forward and reverse pass in the same function. This allows values to be optimized between the forward and reverse pass, and can reduce the memory usage.% as the cache for values inside 
-This analysis detects whether it is legal to execute the forward pass instructions of a function where the gradient computation would occur n reverse pass. If so the forward pass call is erased and the combined function is simply executed in the reverse.
+\begin{figure}
+\centering
+\begin{tabular}{c|c}
+\begin{minipage}[T]{0.42\linewidth}
+\begin{minted}[fontsize=\small]{c}
+double sum(double* x) {
+  double total = 0;
+  for(int i=0; i<10; i++)
+    total += read() * x[i];
+  return total;
+}
 
-\subsection{Cache}
-We need to cache several values for the reverse pass as it may be illegal to recompute them. For example, calling a function that reads for standard in or reading from memory that is overwritten. 
-\todo{talk about alias analysis here}
+void diffe_sum(double* x,
+               double* d_x) {
+  double* read_cache = malloc(10*8);
+  for(int i=0; i<10; i++)
+    readCache[i] = read();
+  // reverse
+  for(int i=10-1; i>=0; i--)
+    d_x[i] += read_cache[i];
+  }
+  free(read_cache);
+}
+\end{minted}
+\end{minipage}
+&
+\begin{minipage}[T]{0.57\linewidth}
+\begin{minted}[fontsize=\small]{c}
+double g(double* x) { return *x * *x; }
+void f(double* x) { *x = g(x); }
 
-\subsection{Differential Use Analysis}
-To maximize performance, it is desirable to minimize the number of values cached. We derive which values are not necessary for computing the gradient and avoid caching them.
+{/*return val*/double,/*cache*/double}
+augmented_g(double* x) {
+  return {x[0]*x[0], x[0]};
+}
 
-\subsection{Already-cached Analysis}
-If we've already cached an equivalent value (e.g. a load to the same location), use the existing cache for the value.
+void diffe_g(double* x, double* d_x,
+             double d_ret, double cache) {
+  d_x[0] += 2 * cache * d_ret;
+}
 
-\subsection{Minimal Cache}
-If a cached value is only used to recompute a single value, we might as well cache the value being recomputed, rather than the original value, preventing the need to recompute it in the reverse pass.
-\todo{interesting graph theory extension/problem here, perhaps in conclusion}
+void diffe_f(double* x, double* xp) {
+  {call, cache} = augmented_g(x);
+  *x = call;
+  double d_ret = *d_x;
+  *d_x = 0;
+  diffe_g(x, d_x, d_ret, cache);
+}
+\end{minted}
+\end{minipage}
+\end{tabular}
+\caption{ {\textbf{\textit{Left:}}} Caching the result of \texttt{read} for the reverse pass. {\textbf{\textit{Right:}}} Creating an augmented forward pass for a function to ensure requisite values are cached for the reverse. }
+\label{fig:cache}
+\end{figure}
 
-Very minor: combine 8 bools into byte
+\subsection{Shadow Memory}
+\label{sec:shadow}
+Gradients of values are stored in shadow allocations. As an example, consider the gradient of \texttt{sum} in the left of Figure~\ref{fig:cache}. The gradient takes in both \texttt{x} as an argument as well as the shadow \texttt{d\_x}, where it will store the gradient of \texttt{x}. For every active value in the forward pass, Enzyme creates and zero's a shadow version of that value. Similarly, any data structures (including function arguments) need to be duplicated.  For any data structures computed inside the function being differentiated Enzyme will create a shadow data structure automatically. This involves duplicating any memory instructions such as malloc/new and stores of pointers, with equivalent shadow memory operations. Finally, Enzyme delays all deallocations until the memory is not needed by the gradient calculation.
+
+Shadow memory is used to compute the adjoint of instructions like \texttt{load} in the reverse pass, which propagates the gradient of the load to the shadow of the pointer operand. Given shadow versions of all arguments and active globals, the shadow version of any value can be computed by duplicating the instruction that created the original value, replacing operands with their shadow. For calls to functions, we return the shadow pointer along with the original pointer.
+
+
+\subsection{Synthesis}
+Given the results of type and activity analysis, Enzyme can now perform synthesis, the creation of the gradient function.
+Enzyme initializes all the shadow values as described in Section~\ref{sec:shadow}.
+For every basic block \texttt{BB} in the original program, Enzyme creates a corresponding reverse block \texttt{reverse\_BB}.
+Enzyme then emits the adjoint of all instructions from \texttt{BB} into \texttt{reverse\_BB} in reverse order. Enzyme then branches to the reverse of \texttt{BB}'s predecessor, returning if \texttt{BB} was the entry block. Finally, Enzyme replaces any return instruction in the forward pass with a branch to its reverse block. An example of this is procedure is shown in Figure~\ref{fig:reluf}.
+
+\AtBeginEnvironment{minted}{%
+  \renewcommand{\fcolorbox}[4][]{#4}}
+
+\newminted[lcodebox]{llvm}{texcl=true, autogobble=true,breaklines}
+
+\begin{figure}
+    \centering
+\hspace*{-1cm}
+\begin{tikzpicture}
+\node[inner sep=0, outer sep=0] (orig) {
+\begin{minipage}[T]{0.49\linewidth}
+\begin{lcodebox}
+define double @relu3(double %x)
+entry:
+  ; Shadow values for reverse
+  ; alloca %d\_x = 0.0
+  ; alloca %d\_call = 0.0
+  ; alloca %d\_result = 0.0
+  br (%x > 0), if.true, if.end
+if.true:
+  %call = @pow(%x, 3)
+  br cond.end
+if.end:
+  %res = phi[%call, if.true],      [0, entry]
+  ret %res
+\end{lcodebox}
+\end{minipage}
+};
+
+\node[inner sep=0, outer sep=0, xshift=6.12cm] (reverse) {
+\begin{minipage}[T]{0.49\linewidth}
+\begin{minted}[fontsize=\small]{llvm}
+reverse_if.end:
+  ; adjoint of return
+  store %d_res = 1.0
+  ; adjoint of %res phi node
+  %d_call += if %x > 0, (load %d_res), else 0
+  store %d_res = 0.0
+  br %cmp, %reverse_if.true, %reverse_entry
+reverse_if.true:
+  ; adjoint of %call
+  %df = 3 * @pow(%x, 2)
+  %d_x += %df * (load %d_call)
+  store %d_call = 0.0
+  br %reverse_entry
+reverse_entry:
+  %0 = load %d_x
+  ret %0
+\end{minted}
+\end{minipage}
+};
+\end{tikzpicture}
+    \caption{Example gradient synthesis for \texttt{relu(pow(x,3))}. The left hand side shows the LLVM IR for the original computation. In the comments on the left we show the shadow allocations of active variables that would be added to the forward pass. The right hand side shows the reverse pass that Enzyme would generate. The full synthesized gradient function would combine these (with shadow allocations added), replacing the return in \texttt{if.end} with a branch to \texttt{reverse\_if.end}.
+    }
+    \label{fig:reluf}
+\end{figure}
+
+
+
+\paragraph{Cache}
+Computing adjoints of various instructions (such as multiplication) often requires values originally computed in the forward pass. By default, Enzyme will attempt to recompute them in the reverse pass. Recomputing is often more efficient as it may use less time and space to maintain, in addition to sometimes letting the optimizer delete code in the forward pass. However, it may be impossible or simply less efficient to recompute certain instructions. As a result, Enzyme provides a cache (often referred to as a tape in other AD systems) that provides forward-pass values to the reverse pass. Instructions that must be cached and cannot be recomputed include load instructions and calls to functions that read from memory. As an example, consider the program in the left of Figure~\ref{fig:cache} that reads from a file as part of the forward pass. Enzyme allocates memory (in this case an array of 10 doubles) to store the values needed by the reverse pass. If Enzyme can statically determine the number of values needing to be stored (e.g. a loop of fixed size), it will perform a single allocation for the cache of that instruction. If it cannot, it will dynamically reallocate the amount of memory.
+
+% Enzyme also will delay any deallocations until after the adjoint of the instruction has executed in the reverse pass.
+To maximize performance, it is desirable to minimize the number of values cached. Enzyme contains a number of optimizations to reduce the number of values needing to be cached. Enzyme greatly benefits from the built-in alias analysis and similar routines in LLVM to reduce the set of values that must be cached by proving that it is legal to recompute them. Enzyme also runs a differential-use analysis to determine which values are not necessary for computing the gradient and avoids caching them. This analysis is sometimes referred to as ``to be recorded analysis'' in other systems~\cite{hascoet2005recorded}. Additionally, if Enzyme already cached an equivalent value (e.g. a load to the same location which couldn't have since been written to), Enzyme simply reuses the existing cache for that value. Finally, if a cached value $A$ is only used to recompute a single value $B$ in the reverse pass, Enzyme will choose to cache the value $B$ instead of the value $A$, minimizing the amount of work in the reverse pass.
+
+For function calls, Enzyme may need to augment a call in the forward pass as shown in the right of Figure~\ref{fig:cache} to save values needed to compute the adjoint of the call.
+
+\paragraph{Combined Forward-Reverse Analysis}
+Whenever possible, it is desirable to compute both the forward and reverse pass in the same function. This allows values to be optimized between the forward and reverse pass, and can reduce memory usage. Enzyme detects whether it is legal to move the forward pass instructions of a function into the adjoint computation. If so, the forward pass call is erased and the combined function is used as the adjoint.
+
+%Very minor: combine 8 bools into byte
+
+\paragraph{Indirect Function Calls}
+An \define{indirect function call} is a call to an anonymous function pointer which is not known at compile time. Like all other active pointers in a function, there exists a shadow version of the called function pointer. Whenever a function pointer is used outside of a static call, we create a new global variable containing a pair of functions, namely the augmented forward and reverse pass. This global is then used as the shadow pointer. Thus, whenever Enzyme needs to perform an adjoint of an active indirect function call, it extracts the augmented forward and gradient functions from the shadow of the indirect callee, then uses those functions in the adjoint. Like the rest of shadow memory, this is handled automatically by Enzyme for all objects created inside functions being differentiated. If you want Enzyme to differentiate a function with a virtual C++ class as an argument, however, you need to pass in a modified virtual method table in the shadow that conforms with Enzyme's calling convention.
+
+\subsection{Limitations}
+Enzyme needs access to the bitcode for any function being differentiated to create adjoints. This prevents Enzyme from differentiating functions loaded or created at runtime code like a shared library or self-modifying code. Enzyme also must be able to deduce the types of active memory operations and phi nodes. Practically, this means enabling TBAA for your language and limiting yourself to programs with statically-analyzable types (no unions of differing types nor copies of undefined memory). Enzyme presently does not implement adjoints of exception-handling instructions so exceptions should be turned off (e.g. with \texttt{-fno-exceptions} for a C++ compiler).
+Currently Enzyme does not implement an adjoint for \texttt{memcpy} of mixed types as in practice LLVM's SROA (scalar replacement of aggregates) optimization is effective in splitting aggregate copies into separate copies\cite{llvm_sroa}.

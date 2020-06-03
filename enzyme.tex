@@ -15,9 +15,10 @@
 %     \usepackage[final]{neurips_2020}
 
 % to avoid loading the natbib package, add option nonatbib:
+\PassOptionsToPackage{numbers, compress}{natbib}
 \usepackage{neurips_2020}
 \usepackage[cache=false]{minted}
-\usepackage[utf8]{inputenc} % allow utf-8 input
+%\usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 \usepackage{hyperref}       % hyperlinks
 \usepackage{url}            % simple URL typesetting
@@ -27,6 +28,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{amsmath}
 \usepackage{wrapfig}
+\usepackage{clrscode3e}
 
 %\usepackage{newunicodechar}
 %\usepackage{fontspec}
@@ -86,13 +88,14 @@
 }
 
 \begin{document}
+\bibliographystyle{plainnat}
 
 \maketitle
 
 
 \begin{abstract}
 Applying differential programming techniques and machine learning algorithms to foreign programs requires developers to either rewrite their code in a machine learning framework, or otherwise provide derivatives of the foreign code.
-This paper presents Enzyme, a high-performance automatic differentiation (AD) compiler plugin for the LLVM compiler framework capable of synthesizing gradients of statically analyzable programs expressed in the LLVM intermediate representation (IR). Specifically, Enzyme can synthesize gradients for programs written in any language whose compiler targets LLVM IR including C, C++, Fortran, Julia, Rust, Swift, MLIR, etc., thereby providing native AD capabilities in these languages. Unlike traditional source-to-source and operator-overloading tools, Enzyme performs AD on optimized IR. On a machine-learning focused benchmark suite including Microsoft's ADBench, AD on optimized IR achieves a geometric mean speedup of 1.6x\todo{put real number} over AD on IR before optimization. Packaging Enzyme for PyTorch and Tensorflow provides convenient access to gradients of foreign code with state-of-the art performance, enabling foreign code to be directly incorporated into existing machine learning workflows. 
+This paper presents Enzyme, a high-performance automatic differentiation (AD) compiler plugin for the LLVM compiler framework capable of synthesizing gradients of statically analyzable programs expressed in the LLVM intermediate representation (IR). Specifically, Enzyme can synthesize gradients for programs written in any language whose compiler targets LLVM IR including C, C++, Fortran, Julia, Rust, Swift, MLIR, etc., thereby providing native AD capabilities in these languages. Unlike traditional source-to-source and operator-overloading tools, Enzyme performs AD on optimized IR. On a machine-learning focused benchmark suite including Microsoft's ADBench, AD on optimized IR achieves a geometric mean speedup of 2.851x\todo{put real number} over AD on IR before optimization. Packaging Enzyme for PyTorch and Tensorflow provides convenient access to gradients of foreign code with state-of-the art performance, enabling foreign code to be directly incorporated into existing machine learning workflows. 
 \end{abstract}
 
 \input{introduction}
@@ -102,7 +105,6 @@ This paper presents Enzyme, a high-performance automatic differentiation (AD) co
 \input{conclusion}
 \input{ack}
 
-\bibliographystyle{plain}
 \bibliography{allpapers}
 
 \end{document}

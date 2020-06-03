@@ -64,3 +64,18 @@ Conclusion:
  Ham it up about don't make a new diffe programming unless you need
  cross language ad disc
  Future work: working with ML community to port phys engines/etc
+ 
+ 
+
+
+
+
+\begin{itemize}
+    \item For each BasicBlock \texttt{B}
+    \begin{itemize}
+        \item Create a reverse block \texttt{reverse\_B}.
+        \item Emit the adjoint for all instruction of \texttt{B} in reverse order into \texttt{reverse\_B}
+        \item Branch to the reverse of the predecessor of \texttt{B}, returning if this was the entry block.
+    \end{itemize}
+    \item Replace return instructions from BasicBlock \texttt{B} with a branch to its reverse \texttt{reverse\_B}
+\end{itemize}
